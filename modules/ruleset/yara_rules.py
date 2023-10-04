@@ -6,7 +6,7 @@ class YaraRules:
     def __init__(self):
         self.rules = None
         self.rule_files = []
-        rules_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "rules")
+        rules_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "yara_rules")
         self.find_rules(rules_path)
         self.load_all_rules()
         
@@ -24,7 +24,7 @@ class YaraRules:
             ruleset[basename] = rule_file
         self.rules = yara.compile(filepaths=ruleset)
             
-    def match_rules(self, domain, **kwargs):
+    def match(self, domain, **kwargs):
         if self.rules is not None:
             return self.rules.match(data=domain, **kwargs)
         else:

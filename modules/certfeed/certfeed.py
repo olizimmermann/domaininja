@@ -2,6 +2,8 @@ import logging
 import sys
 import datetime
 import certstream
+import queue
+import threading
 
 '''
 {
@@ -50,16 +52,17 @@ import certstream
 
 class Certfeed:
     
-    def __init__(self):
+    def __init__(self, domains_queue: queue.Queue):
         print("Certfeed init")
+        self.domains_queue = domains_queue
         logging.basicConfig(format='[%(levelname)s:%(name)s] %(asctime)s - %(message)s', level=logging.INFO)
-        certstream.listen_for_events(self.print_callback, url='wss://certstream.calidog.io/')
+        threading.Thread(target=self.start_certstream).start()
         
-    def print_callback(self, message, context):
+    def start_certstream(self):
+        certstream.listen_for_events(self.get_callback, url='wss://certstream.calidog.io/')
+      
+    def get_callback(self, message, context):
         logging.debug("Message -> {}".format(message))
-
-        if message['message_type'] == "heartbeat":
-            return
 
         if message['message_type'] == "certificate_update":
             all_domains = message['data']['leaf_cert']['all_domains']
@@ -68,9 +71,8 @@ class Certfeed:
                 domain = "NULL"
             else:
                 domain = all_domains[0]
-
-            sys.stdout.write(u"[{}] {} (SAN: {})\n".format(datetime.datetime.now().strftime('%m/%d/%y %H:%M:%S'), domain, ", ".join(message['data']['leaf_cert']['all_domains'][1:])))
-            sys.stdout.flush()
+            
+            self.domains_queue.put(domain)
 
 
 
