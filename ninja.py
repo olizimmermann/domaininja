@@ -15,7 +15,11 @@ typosquatting_engine = Typosquatting()
 
 def queue_worker():
     while True:
+        while domains_queue.empty():
+            time.sleep(1)
         current_domain = domains_queue.get()
+        if current_domain is None:
+            continue
         yara_matches = yara_engine.match(current_domain)
         typosquatting_matches = typosquatting_engine.check_domain_distance(current_domain, max_distance=1)
         if len(yara_matches) > 0:
@@ -31,7 +35,6 @@ def queue_worker():
         domains_queue.task_done()
 
 
-# while domains_queue is not empty check for matches
 for _ in range(50):
     t = threading.Thread(target=queue_worker)
     t.daemon = True
@@ -42,5 +45,5 @@ domains_queue.join()
 while True:
     print("Size of Queue:", domains_queue.qsize())
     print("Size of Dict:", len(domains_dict))
-    time.sleep(5)
+    time.sleep(60*10)
 
