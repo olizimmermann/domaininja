@@ -15,6 +15,12 @@ class YaraRules:
             for root, dirs, files in os.walk(folder_path):
                 for file in files:
                     if file.endswith(".yara"):
+                        try:
+                            yara.compile(os.path.join(root, file))
+                        except:
+                            print("Error compiling rule: " + file)
+                            continue
+                            
                         self.rule_files.append(os.path.join(root, file))
             
     def load_all_rules(self):

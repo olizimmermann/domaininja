@@ -52,9 +52,10 @@ import threading
 
 class Certfeed:
     
-    def __init__(self, domains_queue: queue.Queue):
+    def __init__(self, domains_queue: queue.Queue, domains_dict: dict):
         print("Certfeed init")
         self.domains_queue = domains_queue
+        self.domains_dict = domains_dict
         logging.basicConfig(format='[%(levelname)s:%(name)s] %(asctime)s - %(message)s', level=logging.INFO)
         threading.Thread(target=self.start_certstream).start()
         
@@ -71,7 +72,7 @@ class Certfeed:
                 domain = "NULL"
             else:
                 domain = all_domains[0]
-            
+            self.domains_dict[domain] = message['data']
             self.domains_queue.put(domain)
 
 
