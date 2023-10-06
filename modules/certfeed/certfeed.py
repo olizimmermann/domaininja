@@ -56,7 +56,7 @@ class Certfeed:
         print("Certfeed init")
         self.domains_queue = domains_queue
         self.domains_dict = domains_dict
-        logging.basicConfig(format='[%(levelname)s:%(name)s] %(asctime)s - %(message)s', level=logging.warning)
+        logging.basicConfig(format='[%(levelname)s:%(name)s] %(asctime)s - %(message)s', level=logging.WARN)
         threading.Thread(target=self.start_certstream).start()
         
     def start_certstream(self):

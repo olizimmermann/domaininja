@@ -3,8 +3,20 @@ import queue
 import time
 import threading
 import logging
+import os
+import dotenv
 from modules.certfeed import Certfeed
 from modules.ruleset import YaraRules, Typosquatting
+from modules.db import Database
+
+dotenv.load_dotenv(".env")
+
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+
+db = Database(host=DB_HOST, port=int(DB_PORT), username=DB_USER, password=DB_PASS, database="ninja")
 
 domains_queue = queue.Queue()
 domains_dict = {}
@@ -29,6 +41,7 @@ def queue_worker():
         elif typosquatting_matches is not None:
             print("Typosquatting match")
             print("Possible Typosquatted:", current_domain)
+            db.update_domain(current_domain)
             print("Monitored domain:", typosquatting_matches)
         else:
             domains_dict.pop(current_domain, None)
@@ -36,7 +49,7 @@ def queue_worker():
 
 
 for _ in range(50):
-    t = threading.Thread(target=queue_worker)
+    t = threading.Thread(target=queue_worker) # docker container to spin up?
     t.daemon = True
     t.start()
     
