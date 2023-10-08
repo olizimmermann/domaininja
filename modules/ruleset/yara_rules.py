@@ -1,9 +1,13 @@
 import yara
 import os
+import logging
 
 class YaraRules:
     
     def __init__(self):
+        logging.basicConfig(format='[%(levelname)s:%(name)s] %(asctime)s - %(message)s', level=logging.INFO, filename='ninja.log')
+        self.logger = logging.getLogger(__name__)
+        self.logger.info("Starting YaraRules")
         self.rules = None
         self.rule_files = []
         rules_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "yara_rules")
@@ -19,6 +23,7 @@ class YaraRules:
                             yara.compile(os.path.join(root, file))
                         except:
                             print("Error compiling rule: " + file)
+                            self.logger.warning("Error compiling rule: " + file)
                             continue
                             
                         self.rule_files.append(os.path.join(root, file))

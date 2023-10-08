@@ -56,7 +56,9 @@ class Certfeed:
         print("Certfeed init")
         self.domains_queue = domains_queue
         self.domains_dict = domains_dict
-        logging.basicConfig(format='[%(levelname)s:%(name)s] %(asctime)s - %(message)s', level=logging.WARN)
+        logging.basicConfig(format='[%(levelname)s:%(name)s] %(asctime)s - %(message)s', level=logging.INFO, filename='ninja.log')
+        logger = logging.getLogger(__name__)
+        logger.info("Starting Certfeed")
         threading.Thread(target=self.start_certstream).start()
         
     def start_certstream(self):
@@ -74,6 +76,19 @@ class Certfeed:
                 domain = all_domains[0]
             self.domains_dict[domain] = message['data']
             self.domains_queue.put(domain)
+    
+    def get_sub_domains(self, data):
+        all_domains = data['leaf_cert']['all_domains']
+        sub_domains = []
+        if len(all_domains) == 0:
+            return sub_domains
+        else:
+            for domain in all_domains:
+                if domain != all_domains[0]:
+                    if len(domain.split(".")) >= 3:
+                        sub_domains.append(domain.split(".")[0])
+        return sub_domains
+                
 
 
 
