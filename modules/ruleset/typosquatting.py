@@ -20,12 +20,12 @@ class Typosquatting:
     def check_domain_distance(self, given_domain, original_domains: list = None, max_distance: int = 1, dynamic_max_distance: bool = False):
         if original_domains is None:
             original_domains = self.domains
+        if len(given_domain.split(".")) > 2: # ignore subdomains
+            given_domain = ".".join(given_domain.split(".")[-2:])
         if len(given_domain) < 5: # ignore short domains
             return None
         if dynamic_max_distance:
             max_distance = len(given_domain) // 8
-        if len(given_domain.split(".")) > 2: # ignore subdomains
-            given_domain = ".".join(given_domain.split(".")[-2:])
         for domain in original_domains:
             distance = self.levenshtein_distance(domain, given_domain)
             if distance <= max_distance and distance > 0:
