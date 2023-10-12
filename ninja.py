@@ -42,8 +42,8 @@ def sub_domain_worker():
                 with lock:
                     db.update_subdomain(sub_domain)
         else:
-            time.sleep(10)
             logger.info("No subdomains left")
+            time.sleep(30)
 
 def sub_domain_cleaner():
     while True:
@@ -77,7 +77,7 @@ def queue_worker():
             logger.info("Typosquatting match")
             logger.info(f"Possible Typosquatted: {current_domain}")
             with lock:
-                db.update_domain(current_domain)
+                db.update_domain(current_domain, typosquatting_matches)
             logger.info(f"Monitored domain: {typosquatting_matches}")
         else:
             domains_dict.pop(current_domain, None)

@@ -54,37 +54,35 @@ class Database:
         else:
             self.logger.warning("init_db.sql does not exist")
             
-    def get_domain(self, domain):
+    def get_domain(self, domain, original_domain):
         """ Gets the domain from the database """
         self.check_connection()
-        sql = "SELECT * FROM domains WHERE domain = %s"
+        sql = "SELECT * FROM domains WHERE domain = %s AND original_domain = %s"
         with self.connection.cursor() as cursor:
-            cursor.execute(sql, (domain,))
+            cursor.execute(sql, (domain, original_domain,))
             return cursor.fetchone()
     
-    def update_domain(self, domain):
+    def update_domain(self, domain, original_domain):
         """ Updates the domain in the database """
         self.check_connection()
-        domain_entry = self.get_domain(domain)
+        domain_entry = self.get_domain(domain, original_domain)
         if domain_entry is None:
-            self.insert_domain(domain)
+            self.insert_domain(domain, original_domain)
             return
         times_seen = domain_entry["times_seen"] + 1
-        sql = "UPDATE domains SET times_seen = %s WHERE domain = %s"
+        sql = "UPDATE domains SET times_seen = %s WHERE domain = %s AND original_domain = %s"
         with self.connection.cursor() as cursor:
-            cursor.execute(sql, (times_seen, domain))
+            cursor.execute(sql, (times_seen, domain, original_domain))
             self.connection.commit()
         
-
-    def insert_domain(self, domain):
+    def insert_domain(self, domain, original_domain):
         """ Inserts the domain into the database """
         self.check_connection()
-        sql = "INSERT INTO domains (domain, times_seen) VALUES (%s, %s)"
+        sql = "INSERT INTO domains (domain, original_domain, times_seen) VALUES (%s, %s, %s)"
         with self.connection.cursor() as cursor:
-            cursor.execute(sql, (domain, 1))
+            cursor.execute(sql, (domain, original_domain, 1))
             self.connection.commit()
         
-    
     def get_subdomain(self, sub_domain):
         """ Gets the subdomain from the database """
         self.check_connection()
