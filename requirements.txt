@@ -7,7 +7,7 @@ certstream==1.12
 cffi==1.15.1
 chardet==4.0.0
 charset-normalizer==3.1.0
-cryptography==41.0.4
+cryptography==42.0.4
 defusedxml==0.7.1
 Deprecated==1.2.13
 dnspython==2.3.0
