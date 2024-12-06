@@ -3,7 +3,7 @@ import logging
 
 class Typosquatting:
     
-    def __init__(self, domains_path: str = os.path.join(os.path.dirname(os.path.realpath(__file__)), "typosquatting" ,"top_german.txt")):
+    def __init__(self, domains_path: str = os.path.join(os.path.dirname(os.path.realpath(__file__)), "typosquatting" ,"mb.txt")):
         self.domains = []
         logging.basicConfig(format='[%(levelname)s:%(name)s] %(asctime)s - %(message)s', level=logging.INFO, filename='ninja.log')
         self.logger = logging.getLogger(__name__)

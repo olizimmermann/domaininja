@@ -6,7 +6,7 @@ import logging
 import os
 import dotenv
 from modules.certfeed import Certfeed
-from modules.ruleset import YaraRules, Typosquatting
+from modules.ruleset import YaraRules, Typosquatting, OnPoint
 from modules.db import Database
 
 dotenv.load_dotenv(".env")
@@ -28,7 +28,12 @@ domains_queue = queue.Queue()
 domains_dict = {}
 cert_engine = Certfeed(domains_queue, domains_dict)
 yara_engine = YaraRules()
+onpoint = OnPoint()
 typosquatting_engine = Typosquatting()
+
+yara_rule_enabled = False
+typosquatting_enabled = True
+onpoint_enabled = True
 
 sub_domains = []
 
@@ -60,25 +65,52 @@ def queue_worker():
         current_domain = domains_queue.get()
         if current_domain is None:
             continue
-        try:
-            sub_domains_list = cert_engine.get_sub_domains(domains_dict[current_domain])
-        except KeyError:
-            sub_domains_list = []
-        for sub_domain in sub_domains_list:
-            if not sub_domain == '*':
-                sub_domains.append(sub_domain)
-        yara_matches = yara_engine.match(current_domain)
-        typosquatting_matches = typosquatting_engine.check_domain_distance(current_domain, max_distance=1, dynamic_max_distance=True)
+        
+        if yara_rule_enabled:
+            yara_matches = yara_engine.match(current_domain)
+        else:
+            yara_matches = []
+
+        if onpoint_enabled:
+            onpoint_matches = onpoint.match(current_domain)
+        else:
+            onpoint_matches = None
+
+        if typosquatting_enabled:
+            typosquatting_matches = typosquatting_engine.check_domain_distance(current_domain, max_distance=1, dynamic_max_distance=True)
+        else:
+            typosquatting_matches = None
+        finding = False
         if len(yara_matches) > 0:
             logger.info("Yara match")
             logger.info(f"Matched domain: {current_domain}")
             logger.info(f"Yara Rules: {yara_matches}")
+            # with lock:
+            #     db.update_domain(current_domain, yara_matches[0])
+            finding = True
         elif typosquatting_matches is not None:
             logger.info("Typosquatting match")
             logger.info(f"Possible Typosquatted: {current_domain}")
             with lock:
                 db.update_domain(current_domain, typosquatting_matches)
             logger.info(f"Monitored domain: {typosquatting_matches}")
+            finding = True
+        elif onpoint_matches is not None:
+            logger.info("OnPoint match")
+            logger.info(f"Matched domain: {current_domain}")
+            with lock:
+                db.update_domain(current_domain, onpoint_matches)
+            logger.info(f"Monitored domain: {onpoint_matches}")
+            finding = True
+        if finding:
+            try:
+                sub_domains_list = cert_engine.get_sub_domains(domains_dict[current_domain])
+            except KeyError:
+                sub_domains_list = []
+            for sub_domain in sub_domains_list:
+                if not sub_domain == '*':
+                    sub_domains.append(sub_domain)
+        
         else:
             domains_dict.pop(current_domain, None)
         domains_queue.task_done()
@@ -93,9 +125,9 @@ sub_domains_worker = threading.Thread(target=sub_domain_worker)
 sub_domains_worker.daemon = True
 sub_domains_worker.start()
 
-sub_domains_cleaner = threading.Thread(target=sub_domain_cleaner)
-sub_domains_cleaner.daemon = True
-sub_domains_cleaner.start()
+# sub_domains_cleaner = threading.Thread(target=sub_domain_cleaner)
+# sub_domains_cleaner.daemon = True
+# sub_domains_cleaner.start()
 
 # domains_queue.join()
 while True:
